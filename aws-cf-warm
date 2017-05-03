@@ -19,6 +19,7 @@ import sys
 import subprocess
 import uuid
 import logging
+import signal
 
 temp_dir='/tmp/{}'.format(uuid.uuid4())
 
@@ -61,6 +62,9 @@ except:
     logger.error('Couldnt make a temporary directory for the DNS host aliases')
     sys.exit(1)
 
+# Used to avoid duplicated requests, as some DNS results may overlap
+used_cf_ips=[]
+
 for dns in config['ips']:
     ip = dns.values()
     region = dns.keys()[0]
@@ -79,31 +83,35 @@ for dns in config['ips']:
         downloads_dir = '{}/downloads'.format(temp_dir)
         sub_env = os.environ.copy()
         for result in lookup:
-            logger.info('Using resultant IP {}'.format(result.address))
-            # Append DNS to hosts file
-            with open(host_file, 'a') as file:
-                file.write('{} {}'.format(result.address, distribution))
-            if protocol == 'https':
-                if insecure == True:
-                    try:
-                        exit_code = subprocess.call(['wget', '-r', '--quiet', '--no-dns-cache', '--no-check-certificate', '--secure-protocol', 'TLSv1', '-P', downloads_dir, distribution], stdin=subprocess.PIPE, stderr=subprocess.STDOUT)
-                    except:
-                        logger.error('Requests failed against {} DNS server {}'.format(region, ip))
+            if result.address in used_cf_ips:
+                logger.info('Skipping duplicate IP {}'.format(result.address))
+            else:
+                used_cf_ips.append(result.address)
+                logger.info('Using resultant IP {}'.format(result.address))
+                # Append DNS to hosts file
+                with open(host_file, 'a') as file:
+                    file.write('{} {}'.format(result.address, distribution))
+                if protocol == 'https':
+                    if insecure == True:
+                        try:
+                            exit_code = subprocess.call(['wget', '-r', '--quiet', '--no-dns-cache', '--no-check-certificate', '--secure-protocol', 'TLSv1', '-P', downloads_dir, distribution], stdin=subprocess.PIPE, stderr=subprocess.STDOUT)
+                        except:
+                            logger.error('Requests failed against {} DNS server {}'.format(region, ip[0]))
+                    else:
+                        try:
+                            exit_code = subprocess.call(['wget', '-r', '--quiet', '--no-dns-cache', '--secure-protocol', 'TLSv1', '-P', downloads_dir, distribution], stdin=subprocess.PIPE, stderr=subprocess.STDOUT)
+                            print exit_code
+                        except:
+                            logger.error('Requests failed against {} DNS server {}'.format(region, ip[0]))
                 else:
                     try:
-                        exit_code = subprocess.call(['wget', '-r', '--quiet', '--no-dns-cache', '--secure-protocol', 'TLSv1', '-P', downloads_dir, distribution], stdin=subprocess.PIPE, stderr=subprocess.STDOUT)
-                        print exit_code
+                        exit_code = subprocess.call(['wget', '-r', '--quiet', '--no-dns-cache', '-P', downloads_dir, distribution], stdin=subprocess.PIPE, stderr=subprocess.STDOUT)
                     except:
-                        logger.error('Requests failed against {} DNS server {}'.format(region, ip))
-            else:
-                try:
-                    exit_code = subprocess.call(['wget', '-r', '--quiet', '--no-dns-cache', '-P', downloads_dir, distribution], stdin=subprocess.PIPE, stderr=subprocess.STDOUT)
-                except:
-                    logger.error('Requests failed against {} DNS server {}'.format(region, ip))
-            # Remove the last hosts line added above
-            with open(host_file, 'r') as file:
-                lines = file.readlines()[:-1]
-            with open(host_file, 'w') as file:
-                for line in lines:
-                    file.write(line)
-            time.sleep(2)
+                        logger.error('Requests failed against {} DNS server {}'.format(region, ip[0]))
+                # Remove the last hosts line added above
+                with open(host_file, 'r') as file:
+                    lines = file.readlines()[:-1]
+                with open(host_file, 'w') as file:
+                    for line in lines:
+                        file.write(line)
+                time.sleep(2)
