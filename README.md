@@ -1,7 +1,7 @@
 # aws-cf-warm
-A command line tool for warming AWS CloudFront Distributions by filling [CloudFront Edge Caches](http://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/CloudFrontRegionaledgecaches.html)
+* A command line tool for warming AWS CloudFront Distributions by filling [CloudFront Edge Caches](http://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/CloudFrontRegionaledgecaches.html)
+* Global DNS servers taken from a subset of [public-dns.info](https://public-dns.info/) with 100% reliability rating.
 ![](https://raw.githubusercontent.com/danielwhatmuff/aws-cf-warm/master/logo/cloudfront-logo-fs8.png)
-Global DNS servers taken from a subset of [public-dns.info](https://public-dns.info/) with 100% reliability rating.
 
 ### Customizing
 * To focus your warm on particular countries, choose reliable DNS servers from the "Public DNS Servers by country" links here [public-dns.info](https://public-dns.info/)
