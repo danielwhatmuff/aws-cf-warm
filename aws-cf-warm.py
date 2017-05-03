@@ -25,7 +25,7 @@ temp_dir='/tmp/{}'.format(uuid.uuid4())
 
 def handle_interuption(signal, frame):
     print('\n Cleaning up...')
-    shutil.rmtree('{}'.format(temp_dir))
+    shutil.rmtree(temp_dir)
     quit()
 
 if __name__ == '__main__':
@@ -35,9 +35,6 @@ if __name__ == '__main__':
 with open('config/dns-servers.yml', 'r') as file:
     config = yaml.load(file)
     file.close()
-    ips = []
-    for region in config['ips']:
-        ips.append(region.values())
 
 def parse_arguments():
     PARSER = argparse.ArgumentParser(description='AWS CloudFront Warming CLI')
@@ -63,15 +60,19 @@ except:
     print('Couldnt make a temporary directory for the DNS host aliases')
     quit()
 
-for ip in ips:
-    print 'Using dns {}'.format(ip[0])
-    res.nameservers = list(ip)
+for dns in config['ips']:
+    ip = dns.values()
+    region = dns.keys()[0]
+    print('Warming CloudFront distribution {}'.format(distribution))
+    print('Using {} DNS server {}'.format(region, ip[0]))
+    res.nameservers = ip
     try:
         lookup = res.query(distribution)
     except:
         print('Error resolving distribution hostname: {} using DNS server:'.format(distribution, ip))
         print('Check your distribution is correct using "dig {}" and the DNS server using "dig @{} google.com"'.format(distribution, ip))
         print('If the DNS server seems unhealthy, please file an issue at https://github.com/danielwhatmuff/aws-cf-warm/issues :-)')
+        quit()
     else:
         host_file = '/etc/hosts'
         downloads_dir = '{}/downloads'.format(temp_dir)
@@ -83,16 +84,25 @@ for ip in ips:
                 file.write('{} {}'.format(result.address, distribution))
             if protocol == 'https':
                 if insecure == True:
-                    exit_code = subprocess.call(['wget', '-r', '--quiet', '--no-dns-cache', '--no-check-certificate', '--secure-protocol', 'TLSv1', '-P', downloads_dir, distribution], stdin=subprocess.PIPE, stderr=subprocess.STDOUT)
+                    try:
+                        exit_code = subprocess.call(['wget', '-r', '--quiet', '--no-dns-cache', '--no-check-certificate', '--secure-protocol', 'TLSv1', '-P', downloads_dir, distribution], stdin=subprocess.PIPE, stderr=subprocess.STDOUT)
+                    except:
+                        print('Requests failed against {} DNS server {}'.format(region, ip))
                 else:
-                    exit_code = subprocess.call(['wget', '-r', '--quiet', '--no-dns-cache', '--secure-protocol', 'TLSv1', '-P', downloads_dir, distribution], stdin=subprocess.PIPE, stderr=subprocess.STDOUT)
+                    try:
+                        exit_code = subprocess.call(['wget', '-r', '--quiet', '--no-dns-cache', '--secure-protocol', 'TLSv1', '-P', downloads_dir, distribution], stdin=subprocess.PIPE, stderr=subprocess.STDOUT)
+                    except:
+                        print('Requests failed against {} DNS server {}'.format(region, ip))
             else:
-                exit_code = subprocess.call(['wget', '-r', '--quiet', '--no-dns-cache', '-P', downloads_dir, distribution], stdin=subprocess.PIPE, stderr=subprocess.STDOUT)
-            # Remove the last line added above
+                try:
+                    exit_code = subprocess.call(['wget', '-r', '--quiet', '--no-dns-cache', '-P', downloads_dir, distribution], stdin=subprocess.PIPE, stderr=subprocess.STDOUT)
+                except:
+                    print('Requests failed against {} DNS server {}'.format(region, ip))
+            # Remove the last hosts line added above
             with open(host_file, 'r') as file:
                 lines = file.readlines()[:-1]
             with open(host_file, 'w') as file:
                 for line in lines:
                     file.write(line)
             time.sleep(2)
-        shutil.rmtree('{}'.format(temp_dir))
+        shutil.rmtree(temp_dir)
