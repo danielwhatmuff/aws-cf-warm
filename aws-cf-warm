@@ -15,22 +15,11 @@ import time
 import argparse
 import ssl
 import requests
-import shutil
-import signal
 import sys
 import subprocess
 import uuid
 
 temp_dir='/tmp/{}'.format(uuid.uuid4())
-
-def handle_interuption(signal, frame):
-    print('\n Cleaning up...')
-    shutil.rmtree(temp_dir)
-    quit()
-
-if __name__ == '__main__':
-    original_sigint = signal.getsignal(signal.SIGINT)
-    signal.signal(signal.SIGINT, handle_interuption)
 
 with open('config/dns-servers.yml', 'r') as file:
     config = yaml.load(file)
@@ -87,17 +76,18 @@ for dns in config['ips']:
                     try:
                         exit_code = subprocess.call(['wget', '-r', '--quiet', '--no-dns-cache', '--no-check-certificate', '--secure-protocol', 'TLSv1', '-P', downloads_dir, distribution], stdin=subprocess.PIPE, stderr=subprocess.STDOUT)
                     except:
-                        print('Requests failed against {} DNS server {}'.format(region, ip))
+                        print('Requests failed against {} DNS server {}'.format(region, ip[0]))
                 else:
                     try:
                         exit_code = subprocess.call(['wget', '-r', '--quiet', '--no-dns-cache', '--secure-protocol', 'TLSv1', '-P', downloads_dir, distribution], stdin=subprocess.PIPE, stderr=subprocess.STDOUT)
+                        print exit_code
                     except:
-                        print('Requests failed against {} DNS server {}'.format(region, ip))
+                        print('Requests failed against {} DNS server {}'.format(region, ip[0]))
             else:
                 try:
                     exit_code = subprocess.call(['wget', '-r', '--quiet', '--no-dns-cache', '-P', downloads_dir, distribution], stdin=subprocess.PIPE, stderr=subprocess.STDOUT)
                 except:
-                    print('Requests failed against {} DNS server {}'.format(region, ip))
+                    print('Requests failed against {} DNS server {}'.format(region, ip[0]))
             # Remove the last hosts line added above
             with open(host_file, 'r') as file:
                 lines = file.readlines()[:-1]
@@ -105,4 +95,3 @@ for dns in config['ips']:
                 for line in lines:
                     file.write(line)
             time.sleep(2)
-        shutil.rmtree(temp_dir)

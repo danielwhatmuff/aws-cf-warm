@@ -9,7 +9,7 @@ CLI for warming AWS CloudFront Distributions by filling [CloudFront Edge Caches]
 $ git clone git@github.com:danielwhatmuff/aws-cf-warm.git && cd aws-cf-warm && docker build -t aws-cf-warm .
 ```
 
-## Install using pip
-```bash
-$ pip install aws-cf-warm
+### Warm your distribution!
+```
+$ docker run -ti aws-cf-warm aws-cf-warm.py -d yourapp.com
 ```
