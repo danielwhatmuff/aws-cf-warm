@@ -3,25 +3,25 @@ A command line tool for warming AWS CloudFront Distributions by filling [CloudFr
 ![](https://raw.githubusercontent.com/danielwhatmuff/aws-cf-warm/master/logo/cloudfront-logo-fs8.png)
 Global DNS servers taken from a subset of [public-dns.info](https://public-dns.info/) with 100% reliability rating.
 
+### Customizing
+* To focus your warm on particular countries, choose reliable DNS servers from the "Public DNS Servers by country" links here [public-dns.info](https://public-dns.info/)
+* Configure country code and IPs within `config/dns-servers.yml`
+* Warming will run from the top down
+
 ## Using the CLI
 * Must be run in Docker, to avoid messing with your system DNS to run :whale2: [Docker Install](https://docs.docker.com/engine/installation/)
 * Alias it to easily run from the command line
 
-## Pull the image
+## Build the image (to use customized DNS servers)
+```bash
+$ git clone git@github.com:danielwhatmuff/aws-cf-warm.git && cd aws-cf-warm && docker build -t aws-cf-warm .
+$ alias aws-cf-warm='docker run --rm -ti aws-cf-warm aws-cf-warm'
+```
+
+## Or you can pull the image (this will use preconfigured selection of DNS servers)
 ```bash
 $ docker pull danielwhatmuff/aws-cf-warm
 $ alias aws-cf-warm='docker run --rm -ti danielwhatmuff/aws-cf-warm aws-cf-warm'
-```
-Add the alias to your bash_profile or bashrc.
-
-## Build the image
-```bash
-$ git clone git@github.com:danielwhatmuff/aws-cf-warm.git && cd aws-cf-warm && docker build -t aws-cf-warm .
-```
-
-## Add a bash alias
-```
-$ alias aws-cf-warm='docker run --rm -ti aws-cf-warm aws-cf-warm'
 ```
 
 ### Warm your distribution!
