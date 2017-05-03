@@ -20,11 +20,35 @@ import subprocess
 import uuid
 import logging
 import signal
+from termcolor import colored
+
+
+class ColorLog(object):
+
+    colormap = dict(
+        debug=dict(color='white'),
+        info=dict(color='white', attrs=['bold']),
+        warn=dict(color='yellow', attrs=['bold']),
+        warning=dict(color='yellow', attrs=['bold']),
+        error=dict(color='red', attrs=['bold']),
+        critical=dict(color='red', attrs=['bold']),
+    )
+
+    def __init__(self, logger):
+        self._log = logger
+
+    def __getattr__(self, name):
+        if name in ['debug', 'info', 'warn', 'warning', 'error', 'critical']:
+            return lambda s, *args: getattr(self._log, name)(
+                colored(s, **self.colormap[name]), *args)
+
+        return getattr(self._log, name)
+
 
 temp_dir='/tmp/{}'.format(uuid.uuid4())
 
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger('aws-cf-warm')
+logger = ColorLog(logging.getLogger('aws-cf-warm'))
 
 def handle_interuption(signal, frame):
     logger.error('Warming interupted, some requests may fail...')
