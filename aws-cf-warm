@@ -20,11 +20,15 @@ import signal
 import sys
 import subprocess
 import uuid
+import logging
 
 temp_dir='/tmp/{}'.format(uuid.uuid4())
 
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger('aws-cf-warm')
+
 def handle_interuption(signal, frame):
-    print('\n Warming interupted, some requests may fail...')
+    logger.error('Warming interupted, some requests may fail...')
     sys.exit(1)
 
 if __name__ == '__main__':
@@ -48,7 +52,7 @@ protocol = ARGS.protocol
 insecure = ARGS.insecure
 
 if insecure:
-    print('Ignoring SSL errors')
+    logger.info('Ignoring SSL errors')
 
 res = resolver.Resolver()
 
@@ -56,19 +60,19 @@ try:
     os.mkdir(temp_dir)
     os.mkdir('{}/downloads'.format(temp_dir))
 except:
-    print('Couldnt make a temporary directory for the DNS host aliases')
+    logger.error('Couldnt make a temporary directory for the DNS host aliases')
     sys.exit(1)
 
 for dns in config['ips']:
     ip = dns.values()
     region = dns.keys()[0]
-    print('Warming CloudFront distribution {}'.format(distribution))
-    print('Using {} DNS server {}'.format(region, ip[0]))
+    logger.info('Warming CloudFront distribution {}'.format(distribution))
+    logger.info('Using {} DNS server {}'.format(region, ip[0]))
     res.nameservers = ip
     try:
         lookup = res.query(distribution)
     except:
-        print('Error resolving distribution hostname: {} using DNS server:'.format(distribution, ip))
+        logger.error('Error resolving distribution hostname: {} using DNS server:'.format(distribution, ip))
         print('Check your distribution is correct using "dig {}" and the DNS server using "dig @{} google.com"'.format(distribution, ip))
         print('If the DNS server seems unhealthy, please file an issue at https://github.com/danielwhatmuff/aws-cf-warm/issues :-)')
         quit()
@@ -77,7 +81,7 @@ for dns in config['ips']:
         downloads_dir = '{}/downloads'.format(temp_dir)
         sub_env = os.environ.copy()
         for result in lookup:
-            print('Using resultant IP {}'.format(result.address))
+            logger.info('Using resultant IP {}'.format(result.address))
             # Append DNS to hosts file
             with open(host_file, 'a') as file:
                 file.write('{} {}'.format(result.address, distribution))
@@ -86,17 +90,17 @@ for dns in config['ips']:
                     try:
                         exit_code = subprocess.call(['wget', '-r', '--quiet', '--no-dns-cache', '--no-check-certificate', '--secure-protocol', 'TLSv1', '-P', downloads_dir, distribution], stdin=subprocess.PIPE, stderr=subprocess.STDOUT)
                     except:
-                        print('Requests failed against {} DNS server {}'.format(region, ip))
+                        logger.error('Requests failed against {} DNS server {}'.format(region, ip))
                 else:
                     try:
                         exit_code = subprocess.call(['wget', '-r', '--quiet', '--no-dns-cache', '--secure-protocol', 'TLSv1', '-P', downloads_dir, distribution], stdin=subprocess.PIPE, stderr=subprocess.STDOUT)
                     except:
-                        print('Requests failed against {} DNS server {}'.format(region, ip))
+                        logger.error('Requests failed against {} DNS server {}'.format(region, ip))
             else:
                 try:
                     exit_code = subprocess.call(['wget', '-r', '--quiet', '--no-dns-cache', '-P', downloads_dir, distribution], stdin=subprocess.PIPE, stderr=subprocess.STDOUT)
                 except:
-                    print('Requests failed against {} DNS server {}'.format(region, ip))
+                    logger.error('Requests failed against {} DNS server {}'.format(region, ip))
             # Remove the last hosts line added above
             with open(host_file, 'r') as file:
                 lines = file.readlines()[:-1]
