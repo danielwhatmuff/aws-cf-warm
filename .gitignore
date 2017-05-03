@@ -70,3 +70,6 @@ dump.rdb
 env.json
 zappa_settings.json
 venv/
+
+# Config
+config/files*.yml

@@ -6,7 +6,7 @@ Args:
     -p --protocol       http / https
     -d --distribution   Distribution hostname e.g. example.com
     -i --ignoressl      (Optional) Ignore SSL issues
-    -f --files          Read file paths from config/files.yml
+    -f --files          Read file paths from the specified YAML config file
 """
 
 from dns import resolver
