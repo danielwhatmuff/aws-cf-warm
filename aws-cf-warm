@@ -24,9 +24,8 @@ import uuid
 temp_dir='/tmp/{}'.format(uuid.uuid4())
 
 def handle_interuption(signal, frame):
-    print('\n Cleaning up...')
-    shutil.rmtree(temp_dir)
-    quit()
+    print('\n Warming interupted, some requests may fail...')
+    sys.exit(1)
 
 if __name__ == '__main__':
     original_sigint = signal.getsignal(signal.SIGINT)
@@ -58,7 +57,7 @@ try:
     os.mkdir('{}/downloads'.format(temp_dir))
 except:
     print('Couldnt make a temporary directory for the DNS host aliases')
-    quit()
+    sys.exit(1)
 
 for dns in config['ips']:
     ip = dns.values()
@@ -105,4 +104,3 @@ for dns in config['ips']:
                 for line in lines:
                     file.write(line)
             time.sleep(2)
-        shutil.rmtree(temp_dir)
