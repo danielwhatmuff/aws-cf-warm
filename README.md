@@ -1,6 +1,7 @@
 # aws-cf-warm
 A command line tool for warming AWS CloudFront Distributions by filling [CloudFront Edge Caches](http://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/CloudFrontRegionaledgecaches.html)
 ![](https://raw.githubusercontent.com/danielwhatmuff/aws-cf-warm/master/logo/cloudfront-logo-fs8.png)
+Global DNS servers taken from a subset of [public-dns.info](https://public-dns.info/) with 100% reliability rating.
 
 ## Using the CLI
 * Must be run in Docker, to avoid messing with your system DNS to run :whale2: [Docker Install](https://docs.docker.com/engine/installation/)
