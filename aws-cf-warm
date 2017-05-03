@@ -82,7 +82,7 @@ files = ARGS.files
 
 if files:
     try:
-        with open('config/files.yml', 'r') as file:
+        with open(files, 'r') as file:
            file_paths = yaml.load(file)
     except:
         logger.error('Error loading config/files.yml')
@@ -113,13 +113,32 @@ for dns in config['ips']:
         lookup = res.query(distribution)
     except:
         logger.error('Error resolving distribution hostname: {} using DNS server:'.format(distribution, ip))
-        print('Check your distribution is correct using "dig {}" and the DNS server using "dig @{} google.com"'.format(distribution, ip))
-        print('If the DNS server seems unhealthy, please file an issue at https://github.com/danielwhatmuff/aws-cf-warm/issues :-)')
+        logger.error('Check your distribution is correct using "dig {}" and the DNS server using "dig @{} google.com"'.format(distribution, ip))
+        logger.error('If the DNS server seems unhealthy, please file an issue at https://github.com/danielwhatmuff/aws-cf-warm/issues :-)')
         quit()
     else:
         host_file = '/etc/hosts'
         downloads_dir = '{}/downloads'.format(temp_dir)
         sub_env = os.environ.copy()
+
+        #wget_base_command = ['wget', '--quiet', '--no-dns-cache', '-P', downloads_dir]
+        wget_base_command = ['wget', '--no-dns-cache', '-P', downloads_dir]
+
+        if protocol == 'https':
+            logger.info('Using https mode')
+            wget_base_command.insert(1, 'TLSv1')
+            wget_base_command.insert(1, '--secure-protocol')
+            wget_command = wget_base_command
+
+            if insecure == True:
+                logger.info('Running in insecure mode (avoid this if possible)')
+                wget_command = wget_command.insert(2, '--no-check-certificate')
+            else:
+                logger.info('Running in secure SSL mode (recommended)')
+        elif protocol == 'http':
+            logger.info('Using http mode')
+            wget_command = wget_base_command
+
         for result in lookup:
             if result.address in used_cf_ips:
                 logger.info('Skipping duplicate IP {}'.format(result.address))
@@ -127,39 +146,34 @@ for dns in config['ips']:
                 used_cf_ips.append(result.address)
                 logger.info('Using resultant IP {}'.format(result.address))
                 # Append DNS to hosts file
+                logger.info('Adding host entry')
                 with open(host_file, 'a') as file:
                     file.write('{} {}'.format(result.address, distribution))
 
-                wget_base_command = ['wget', '--quiet', '--no-dns-cache', '-P', downloads_dir]
-
-                if protocol == 'https':
-                    wget_command = wget_base_command.insert(1, 'TLSv1')
-                    wget_command = wget_base_command.insert(1, '--secure-protocol')
-
-                    if insecure == True:
-                        wget_command = wget_base_command.insert(2, '--no-check-certificate')
-
                 if files == False:
-                    wget_command = wget_base_command.insert(1, '-r')
-                    wget_command = wget_base_command.append(distribution)
+                    logger.info('Running in recursive mode')
+                    wget_command.insert(1, '-r')
+                    wget_command.append(distribution)
                     try:
                         exit_code = subprocess.call(wget_command, stdin=subprocess.PIPE, stderr=subprocess.STDOUT)
                     except:
                         logger.error('Requests failed against {} DNS server {}'.format(region, ip[0]))
-                elif files == True:
+                else:
+                    logger.info('Running against list of objects specified in config file {}'.format(files))
                     for file in file_paths:
-                        wget_command = wget_base_command.append(file)
+                        wget_command.append('{}/{}'.format(distribution, file))
                         try:
                             exit_code = subprocess.call(wget_command, stdin=subprocess.PIPE, stderr=subprocess.STDOUT)
                         except:
                             logger.error('Requests failed against {} DNS server {}'.format(region, ip[0]))
-                        finally:
-                            wget_command = wget_command[:-1]
+                        wget_command = wget_command[:-1]
 
                 # Remove the last hosts line added above
+                logger.info('Removing host entry')
                 with open(host_file, 'r') as file:
                     lines = file.readlines()[:-1]
                 with open(host_file, 'w') as file:
                     for line in lines:
                         file.write(line)
+
                 time.sleep(2)
