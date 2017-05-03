@@ -6,6 +6,7 @@ Args:
     -p --protocol       http / https
     -d --distribution   Distribution hostname e.g. example.com
     -i --ignoressl      (Optional) Ignore SSL issues
+    -f --files          Read file paths from config/files.yml
 """
 
 from dns import resolver
@@ -58,21 +59,34 @@ if __name__ == '__main__':
     original_sigint = signal.getsignal(signal.SIGINT)
     signal.signal(signal.SIGINT, handle_interuption)
 
-with open('config/dns-servers.yml', 'r') as file:
-    config = yaml.load(file)
-    file.close()
-
+try:
+    with open('config/dns-servers.yml', 'r') as file:
+        config = yaml.load(file)
+except:
+    logger.error('Error loading config/dns-servers.yml')
+    quit()
+    
 def parse_arguments():
     PARSER = argparse.ArgumentParser(description='AWS CloudFront Warming CLI')
     PARSER.add_argument('-d', '--distribution', help="The CloudFront distribution hostname e.g. myapp.com")
     PARSER.add_argument('-p', '--protocol', help="http or https")
     PARSER.add_argument('-i', '--insecure', help="Ignore SSL issues", action='store_true')
+    PARSER.add_argument('-f', '--files', help="Read config/files.yml for locating objects", default=False)
     return PARSER.parse_args()
 
 ARGS = parse_arguments()
 distribution = ARGS.distribution
 protocol = ARGS.protocol
 insecure = ARGS.insecure
+files = ARGS.files
+
+if files:
+    try:
+        with open('config/files.yml', 'r') as file:
+           file_paths = yaml.load(file)
+    except:
+        logger.error('Error loading config/files.yml')
+        quit()
 
 if insecure:
     logger.info('Ignoring SSL errors')
@@ -115,23 +129,33 @@ for dns in config['ips']:
                 # Append DNS to hosts file
                 with open(host_file, 'a') as file:
                     file.write('{} {}'.format(result.address, distribution))
+
+                wget_base_command = ['wget', '--quiet', '--no-dns-cache', '-P', downloads_dir]
+
                 if protocol == 'https':
+                    wget_command = wget_base_command.insert(1, 'TLSv1')
+                    wget_command = wget_base_command.insert(1, '--secure-protocol')
+
                     if insecure == True:
-                        try:
-                            exit_code = subprocess.call(['wget', '-r', '--quiet', '--no-dns-cache', '--no-check-certificate', '--secure-protocol', 'TLSv1', '-P', downloads_dir, distribution], stdin=subprocess.PIPE, stderr=subprocess.STDOUT)
-                        except:
-                            logger.error('Requests failed against {} DNS server {}'.format(region, ip[0]))
-                    else:
-                        try:
-                            exit_code = subprocess.call(['wget', '-r', '--quiet', '--no-dns-cache', '--secure-protocol', 'TLSv1', '-P', downloads_dir, distribution], stdin=subprocess.PIPE, stderr=subprocess.STDOUT)
-                            print exit_code
-                        except:
-                            logger.error('Requests failed against {} DNS server {}'.format(region, ip[0]))
-                else:
+                        wget_command = wget_base_command.insert(2, '--no-check-certificate')
+
+                if files == False:
+                    wget_command = wget_base_command.insert(1, '-r')
+                    wget_command = wget_base_command.append(distribution)
                     try:
-                        exit_code = subprocess.call(['wget', '-r', '--quiet', '--no-dns-cache', '-P', downloads_dir, distribution], stdin=subprocess.PIPE, stderr=subprocess.STDOUT)
+                        exit_code = subprocess.call(wget_command, stdin=subprocess.PIPE, stderr=subprocess.STDOUT)
                     except:
                         logger.error('Requests failed against {} DNS server {}'.format(region, ip[0]))
+                elif files == True:
+                    for file in file_paths:
+                        wget_command = wget_base_command.append(file)
+                        try:
+                            exit_code = subprocess.call(wget_command, stdin=subprocess.PIPE, stderr=subprocess.STDOUT)
+                        except:
+                            logger.error('Requests failed against {} DNS server {}'.format(region, ip[0]))
+                        finally:
+                            wget_command = wget_command[:-1]
+
                 # Remove the last hosts line added above
                 with open(host_file, 'r') as file:
                     lines = file.readlines()[:-1]
