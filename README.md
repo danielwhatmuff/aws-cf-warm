@@ -3,7 +3,7 @@
 * Global DNS servers taken from a subset of [public-dns.info](https://public-dns.info/) with 100% reliability rating.
 ![](https://raw.githubusercontent.com/danielwhatmuff/aws-cf-warm/master/logo/cloudfront-logo-fs8.png)
 
-### Customizing
+## Customizing
 * To focus your warm on particular countries, choose reliable DNS servers from the "Public DNS Servers by country" links here [public-dns.info](https://public-dns.info/)
 * Configure country code and IPs within `config/dns-servers.yml`
 * Warming will run from the top down
@@ -24,7 +24,7 @@ $ docker pull danielwhatmuff/aws-cf-warm
 $ alias aws-cf-warm='docker run --rm -ti danielwhatmuff/aws-cf-warm aws-cf-warm'
 ```
 
-### Warm your distribution!
+## Warm your CF distribution!
 ```
 $ docker run --rm -ti aws-cf-warm aws-cf-warm.py -d yourapp.com
 ```
