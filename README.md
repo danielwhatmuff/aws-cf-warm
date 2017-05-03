@@ -26,7 +26,12 @@ $ alias aws-cf-warm='docker run --rm -ti danielwhatmuff/aws-cf-warm aws-cf-warm'
 
 ## Warm your CF distribution!
 ```
-$ docker run --rm -ti aws-cf-warm aws-cf-warm.py -d yourapp.com
+$ aws-cf-warm -d yourapp.com
+```
+
+## View options
+```
+$ aws-cf-warm -h
 ```
 
 # Contributing / Issues
