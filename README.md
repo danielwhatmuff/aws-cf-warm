@@ -1,6 +1,6 @@
 # aws-cf-warm
 CLI for warming AWS CloudFront Distributions by filling [CloudFront Edge Caches](http://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/CloudFrontRegionaledgecaches.html)
-![](https://raw.github.com/danielwhatmuff/aws-cf-warm/logo/cloudfront-logo.png?raw=true)
+![](https://raw.githubusercontent.com/danielwhatmuff/aws-cf-warm/master/logo/cloudfront-logo-fs8.png)
 
 * Requires Docker to run :whale2: [Docker Install](https://docs.docker.com/engine/installation/)
 * Alias it to easily run from the command line
