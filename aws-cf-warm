@@ -53,7 +53,7 @@ logger = ColorLog(logging.getLogger('aws-cf-warm'))
 
 def handle_interuption(signal, frame):
     logger.error('Warming interupted, some requests may fail...')
-    sys.exit(1)
+    quit()
 
 if __name__ == '__main__':
     original_sigint = signal.getsignal(signal.SIGINT)
@@ -121,8 +121,7 @@ for dns in config['ips']:
         downloads_dir = '{}/downloads'.format(temp_dir)
         sub_env = os.environ.copy()
 
-        #wget_base_command = ['wget', '--quiet', '--no-dns-cache', '-P', downloads_dir]
-        wget_base_command = ['wget', '--no-dns-cache', '-P', downloads_dir]
+        wget_base_command = ['wget', '--quiet', '--no-dns-cache', '-P', downloads_dir]
 
         if protocol == 'https':
             logger.info('Using https mode')
@@ -161,7 +160,9 @@ for dns in config['ips']:
                 else:
                     logger.info('Running against list of objects specified in config file {}'.format(files))
                     for file in file_paths:
-                        wget_command.append('{}/{}'.format(distribution, file))
+                        url = '{}/{}'.format(distribution, file)
+                        logger.info('Warming cache for {}'.format(url))
+                        wget_command.append(url)
                         try:
                             exit_code = subprocess.call(wget_command, stdin=subprocess.PIPE, stderr=subprocess.STDOUT)
                         except:

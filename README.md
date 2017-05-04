@@ -26,7 +26,12 @@ $ alias aws-cf-warm='docker run --rm -ti danielwhatmuff/aws-cf-warm aws-cf-warm'
 
 ## Warm your CF distribution!
 ```
-$ aws-cf-warm -d yourapp.com
+$ aws-cf-warm -d yourapp.com -p https
+```
+
+## Warm your CF distribution using a list of file paths!
+```
+$ aws-cf-warm -d yourapp.com -p https -f config/myfiles.yml
 ```
 
 ## View options
