@@ -9,7 +9,7 @@
 * Warming will run from the top down
 
 ## Using the CLI
-* Must be run in Docker, to avoid messing with your system DNS to run :whale2: [Docker Install](https://docs.docker.com/engine/installation/)
+* IMPORTANT: The CLI must be run in Docker, to avoid messing with your hosts DNS - install it here [Docker Install](https://docs.docker.com/engine/installation/) :whale2:
 * Alias it to easily run from the command line
 
 ## Build the image (to use customized DNS servers)
