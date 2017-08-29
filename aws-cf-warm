@@ -113,7 +113,7 @@ for dns in config['ips']:
         lookup = res.query(distribution)
     except:
         logger.error('Error resolving distribution hostname: {} using DNS server:'.format(distribution, ip))
-        logger.error('Check your distribution is correct using "dig {}" and the DNS server using "dig @{} google.com"'.format(distribution, ip))
+        logger.error('Check your distribution is correct using "dig {}" and the DNS server using "dig @{} google.com"'.format(distribution, ip[0]))
         logger.error('If the DNS server seems unhealthy, please file an issue at https://github.com/danielwhatmuff/aws-cf-warm/issues :-)')
         quit()
     else:
